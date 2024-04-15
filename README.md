@@ -23,6 +23,7 @@
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
 ## Description
+This Repository just my experimental using NestJs, Prisma ORM and Redis for cache
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
