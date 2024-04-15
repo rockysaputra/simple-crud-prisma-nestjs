@@ -5,3 +5,8 @@ export class CreateUserDTO{
     address:string;
     city:string
 }
+
+export class UpdateUserDTO{
+    password:string;
+    address:string;
+}

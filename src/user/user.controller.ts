@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post, Res } from '@nestjs/common';
 import { UserService } from './user.service';
 import { Response } from 'express';
-import { CreateUserDTO } from './create-user.dto';
+import { CreateUserDTO, UpdateUserDTO } from './create-user.dto';
 import { client_redis } from 'src/redis_connect/redis_connect';
 
 @Controller('user')
@@ -10,16 +10,34 @@ export class UserController {
 
   @Get()
   async getAllUser(@Res() res:Response){
+    try {
+      let findUser
+      let cache = await client_redis.get("users:users")
+      
+      if(cache){
+        findUser = JSON.parse(cache)
+      }else{
+        findUser = await this.userService.findAllUsers(res);
+        // console.log(findUser);
+        
+        await client_redis.set("users:users",JSON.stringify(findUser))
+      }
+
+      res.status(HttpStatus.OK).json(findUser);
+    } catch (error) {
+      console.log(error);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        "message":"Internal Server Error"
+      });
+    }
+  }
+
+  @Get(":id")
+  async getUserDetail(@Res() res:Response ,@Param('id') id:number){
     let findUser
 
-    let cache = await client_redis.get("users:users")
-    
-    if(cache){
-      findUser = JSON.parse(cache)
-    }else{
-      findUser = await this.userService.findAllUsers();
-      await client_redis.set("users:users",JSON.stringify(findUser))
-    }
+    findUser = await this.userService.findDetailUsers(res,id);
+   
     res.status(HttpStatus.OK).json(findUser);
   }
 
@@ -62,5 +80,23 @@ export class UserController {
     }
   }
 
+  @Patch(':id')
+  async updateUserAddress(@Param('id') id:number , @Body()UpdateUserDTO:UpdateUserDTO ,@Res() res:Response) {
+    try {
+
+      const updateUserAddress = await this.userService.updateUserAdress(id,res,UpdateUserDTO)
+      await client_redis.del("users:users")
+
+      return res.status(HttpStatus.OK).json({
+        "State":"Success",
+        "message":`Success Update data with id ${id}`
+      })
+    } catch (error) {
+      console.log(error);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        "message":"Internal Server Error"
+      });
+    }
+  }
 
 }

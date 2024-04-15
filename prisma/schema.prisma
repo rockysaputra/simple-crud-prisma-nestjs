@@ -36,4 +36,5 @@ model Film{
   id      Int      @id @default(autoincrement())
   film    String
   createdAt DateTime @default(now())
+  Producer  String
 }
