@@ -3,8 +3,9 @@ import { PrismaService } from "src/prisma.service";
 import { CreateUserDTO } from "./create-user.dto";
 import { Response } from "express";
 import { send } from "process";
+import { LoginUserDTO } from "./login-user.dto";
 const bcrypt = require('bcrypt')
-
+const jwt = require('jsonwebtoken')
 
 function hashPassword(curPassword:string){
     const salt = bcrypt.genSaltSync(10)
@@ -110,6 +111,57 @@ export class UserService{
             })
 
             return res.status(HttpStatus.OK)
+        } catch (error) {
+            console.log(error);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                "message":"Internal Server Error"
+            });
+        }
+    }
+    
+    async loginUser(loginData:LoginUserDTO,@Res() res:Response){
+        try {
+            const getUserData = await this.prismaService.user.findFirst({
+                where:{
+                    email : loginData.email
+                }
+            })
+
+            if(!getUserData){
+                return res.status(HttpStatus.NOT_FOUND).json({
+                    "statusCode":"404",
+                    "message":"user with this email not found"
+                })
+            }
+
+            const userPassword = getUserData.password
+
+            const comparePassword = await bcrypt.compareSync(loginData.password,userPassword)
+
+            if(!comparePassword){
+                return res.status(HttpStatus.FORBIDDEN).json({
+                    "statusCode":"403",
+                    "message":"wrong password"
+                })
+            }
+            
+            const token = jwt.sign(
+                {
+                    data: {id:getUserData,email:loginData.email}
+                },
+               'secret', { expiresIn: '1h' });
+
+               
+            return res.status(HttpStatus.OK).json({
+                "statusCode":"200",
+                "message":"Login Success",
+                "data":{
+                    token,
+                    name:getUserData.name,
+                    email:loginData.email
+                }
+            })
+            
         } catch (error) {
             console.log(error);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({

@@ -3,6 +3,7 @@ import { UserService } from './user.service';
 import { Response } from 'express';
 import { CreateUserDTO, UpdateUserDTO } from './create-user.dto';
 import { client_redis } from 'src/redis_connect/redis_connect';
+import { LoginUserDTO } from './login-user.dto';
 
 @Controller('user')
 export class UserController {
@@ -99,4 +100,20 @@ export class UserController {
     }
   }
 
+  @Post("/login")
+  async loginUser(@Body() loginUserData:LoginUserDTO ,@Res() res:Response){
+    try {
+      console.log("masuk kedalam sini");
+      console.log(loginUserData);
+      
+      const getLoginUser = await this.userService.loginUser(loginUserData,res)
+
+      return getLoginUser
+    } catch (error) {
+      console.log(error);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        "message":"Internal Server Error"
+      });
+    }
+  }
 }
